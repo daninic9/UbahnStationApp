@@ -7,8 +7,6 @@ n
 >app/src/main/graphql/com.daninic9.ubahnstations/.graphqlconfig,2/1/21d82fc2b38ec2460b345a7c01a5769190c4282b
 o
 ?app/src/main/graphql/com.daninic9.ubahnstations/schema.graphql2,b/f/bfb6f4f2d744249ce3c22924403575e9e6331a74
-P
- app/src/main/AndroidManifest.xml,8/c/8c55c3ccc257e5907959013f99656e4c8ec3903e
 @
 app/build.gradle,f/4/f4a01d6a4fcb971362ec00a83903fd3902f52164
 v

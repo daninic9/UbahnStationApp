@@ -19,6 +19,7 @@ import java.util.Properties;
 public class GraphQlManager implements Runnable {
 
     private final Context context;
+    private boolean isAlive = true;
     private ApolloClient apolloClient;
     private int listSize;
 

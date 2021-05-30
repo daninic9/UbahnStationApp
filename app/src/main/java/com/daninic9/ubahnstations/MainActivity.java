@@ -13,6 +13,8 @@ import com.orhanobut.logger.FormatStrategy;
 import com.orhanobut.logger.Logger;
 import com.orhanobut.logger.PrettyFormatStrategy;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,10 +29,12 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private StationCustomAdapter stationCustomAdapter;
-    private RecyclerView stations_listview;
+    private RecyclerView stations_recycler;
     private SwipeRefreshLayout swipeRefreshLayout;
 
     private GraphQlManager graphQlManager;
+
+    private boolean isFiltered = false;
 
     public static List<GetStationInfoQuery.StationWithEvaId> stationList = new ArrayList<>();
 
@@ -50,22 +54,34 @@ public class MainActivity extends AppCompatActivity {
 
         declareViews();
 
-        swipeRefreshLayout.setRefreshing(true);
+        blockScreen(true);
         graphQlManager = new GraphQlManager(this);
         graphQlManager.run();
-
     }
 
     private void declareViews() {
-        stations_listview = findViewById(R.id.stations_listview);
-        stations_listview.setLayoutManager(new LinearLayoutManager(this));
+        stations_recycler = findViewById(R.id.stations_recycler);
+        stations_recycler.setLayoutManager(new LinearLayoutManager(this));
+        stations_recycler.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NotNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                if (!recyclerView.canScrollVertically(1) && !swipeRefreshLayout.isRefreshing()) {
+                    Logger.d("Load Next 10");
+                    blockScreen(true);
+                }
+            }
+        });
 
         swipeRefreshLayout = findViewById(R.id.swipeContainer_stations);
         swipeRefreshLayout.setOnRefreshListener(() -> {
-            if (!stationList.isEmpty()) {
-                stationList.clear();
+            if (!isFiltered) {
+                if (!stationList.isEmpty()) {
+                    stationList.clear();
+                }
+                graphQlManager.run();
+                blockScreen(true);
             }
-            graphQlManager.run();
         });
         swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright,
                 android.R.color.holo_green_light,
@@ -73,6 +89,10 @@ public class MainActivity extends AppCompatActivity {
                 android.R.color.holo_red_light);
     }
 
+    private void blockScreen(boolean lock) {
+        swipeRefreshLayout.setRefreshing(lock);
+        stations_recycler.setEnabled(!lock);
+    }
 
     public void infoUpdate() {
         if(!stationList.isEmpty()) {
@@ -84,8 +104,8 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                 });
-                stations_listview.setAdapter(stationCustomAdapter);
-                swipeRefreshLayout.setRefreshing(false);
+                stations_recycler.setAdapter(stationCustomAdapter);
+                blockScreen(false);
             });
         }
     }
