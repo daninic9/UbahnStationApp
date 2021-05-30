@@ -1,0 +1,389 @@
+# This file was generated based on ".graphqlconfig". Do not edit manually.
+
+schema {
+    query: Query
+}
+
+type BikeAttributes {
+    licensePlate: String!
+}
+
+type CarAttributes {
+    color: String!
+    doors: Int!
+    fillLevel: Int
+    fuel: String
+    licensePlate: String
+    seats: Int!
+    transmissionType: String!
+}
+
+type CarEquipment {
+    airConditioning: Boolean
+    audioInline: Boolean
+    bluetoothHandsFreeCalling: Boolean
+    cdPlayer: Boolean
+    cruiseControl: Boolean
+    isofixSeatFittings: Boolean
+    navigationSystem: Boolean
+    particulateFilter: Boolean
+    passengerAirbagTurnOff: Boolean
+    roofRailing: Boolean
+    tyreType: String
+}
+
+type Facility {
+    description: String
+    equipmentNumber: Int
+    location: Location
+    state: FacilityState!
+    type: FacilityType!
+}
+
+type FlinksterBike {
+    address: MailingAddress!
+    attributes: BikeAttributes!
+    bookingUrl: String!
+    description: String!
+    id: String!
+    location: Location!
+    name: String!
+    parkingArea: FlinksterParkingArea!
+    priceOptions: [PriceOption]!
+    providerRentalObjectId: Int!
+    rentalModel: String!
+    type: String!
+    url: String!
+}
+
+type FlinksterCar {
+    attributes: CarAttributes!
+    category: String!
+    description: String!
+    equipment: CarEquipment!
+    id: String!
+    location: Location!
+    name: String!
+    parkingArea: FlinksterParkingArea!
+    priceOptions: [PriceOption]!
+    rentalModel: String!
+    url: String!
+}
+
+type FlinksterParkingArea {
+    GeoJSON: GeoJSON
+    accessDescription: String
+    address: MailingAddress!
+    id: String!
+    locationDescription: String
+    name: String!
+    parkingDescription: String
+    position: Location!
+    provider: FlinksterProvider!
+    publicTransport: String
+    type: String!
+    url: String!
+}
+
+type FlinksterProvider {
+    areaId: Int!
+    networkIds: [Int!]!
+    url: String!
+}
+
+type GeoFeature {
+    geometry: GeoPolygon!
+    properties: GeoProperties!
+    type: String!
+}
+
+type GeoJSON {
+    features: [GeoFeature!]!
+    type: String!
+}
+
+type GeoPolygon {
+    coordinates: [[[[Float]]]]!
+    type: String!
+}
+
+type GeoProperties {
+    name: String!
+}
+
+type Location {
+    latitude: Float!
+    longitude: Float!
+}
+
+type MailingAddress {
+    city: String!
+    street: String!
+    zipcode: String!
+}
+
+type Nearby {
+    bikes(count: Int = 10, offset: Int = 0): [FlinksterBike!]!
+    flinksterCars(count: Int = 10, offset: Int = 0): [FlinksterCar!]!
+    parkingSpaces(count: Int = 10, offset: Int = 0): [ParkingSpace!]!
+    stations(count: Int = 10, offset: Int = 0): [Station!]!
+    travelCenters(count: Int = 10, offset: Int = 0): [TravelCenter!]!
+}
+
+type Occupancy {
+    category: Int!
+    text: String!
+    timeSegment: String!
+    timestamp: String!
+    validData: Boolean!
+}
+
+type OpeningTime {
+    from: String!
+    to: String!
+}
+
+type OpeningTimes {
+    friday: OpeningTime
+    holiday: OpeningTime
+    monday: OpeningTime
+    saturday: OpeningTime
+    sunday: OpeningTime
+    thursday: OpeningTime
+    tuesday: OpeningTime
+    wednesday: OpeningTime
+}
+
+type OperationLocation {
+    UIC: String!
+    abbrev: String!
+    borderStation: Boolean
+    id: String
+    locationCode: String
+    name: String!
+    regionId: String
+    shortName: String!
+    status: String
+    timeTableRelevant: Boolean
+    type: String!
+    validFrom: String!
+    validTill: String
+}
+
+type ParkingPriceOption {
+    duration: String!
+    id: Int!
+    price: Float
+}
+
+type ParkingSpace {
+    address: MailingAddress
+    allowedPropulsions: String
+    clearanceHeight: String
+    clearanceWidth: String
+    distance: String
+    facilityType: String
+    facilityTypeEn: String
+    hasChargingStation: String
+    id: Int!
+    isDiscountDbBahnCard: Boolean!
+    isDiscountDbBahnComfort: Boolean!
+    isDiscountDbParkAndRail: Boolean!
+    isMonthParkAndRide: Boolean!
+    isMonthSeason: Boolean!
+    isMonthVendingMachine: Boolean!
+    isOutOfService: Boolean!
+    isSpecialProductDb: Boolean!
+    label: String
+    location: Location
+    name: String
+    nameDisplay: String
+    numberHandicapedPlaces: String
+    numberParkingPlaces: String
+    occupancy: Occupancy
+    openingHours: String
+    openingHoursEn: String
+    operator: String
+    operatorUrl: String
+    outOfService: Boolean!
+    outOfServiceText: String
+    outOfServiceTextEn: String
+    reservation: String
+    responsibility: String
+    slogan: String
+    sloganEn: String
+    source: String
+    spaceNumber: String
+    spaceType: String
+    spaceTypeEn: String
+    spaceTypeName: String
+    station: Station
+    tariffDiscount: String
+    tariffDiscountEn: String
+    tariffFreeParkingTime: String
+    tariffFreeParkingTimeEn: String
+    tariffPaymentCustomerCards: String
+    tariffPaymentOptions: String
+    tariffPaymentOptionsEn: String
+    tariffPrices: [ParkingPriceOption!]!
+    type: String
+    url: String
+}
+
+type Photographer {
+    name: String!
+    url: String!
+}
+
+type Picture {
+    id: Int!
+    license: String!
+    photographer: Photographer!
+    url: String!
+}
+
+type PriceOption {
+    currency: String!
+    grossamount: Float!
+    interval: Int
+    preferredprice: Boolean!
+    taxrate: Float!
+    type: String!
+}
+
+type Product {
+    class: Int
+    name: String
+    productCode: Int
+    productName: String
+}
+
+type Query {
+    nearby(latitude: Float!, longitude: Float!, radius: Int = 10000): Nearby!
+    parkingSpace(id: Int): ParkingSpace
+    routing(from: Int!, to: Int!): [Route!]!
+    search(searchTerm: String): Searchable!
+    stationWithEvaId(evaId: Int!): Station
+    stationWithRill100(rill100: String!): Station
+    stationWithStationNumber(stationNumber: Int!): Station
+}
+
+type RegionalArea {
+    name: String!
+    number: Int!
+    shortName: String!
+}
+
+type Route {
+    from: Station
+    parts: [RoutePart!]!
+    to: Station
+}
+
+type RoutePart {
+    arrivingTrack: Track
+    delay: Int
+    departingTrack: Track
+    direction: String!
+    end: String!
+    "Station where the part begins"
+    from: Station!
+    product: Product
+    start: String!
+    to: Station!
+}
+
+type Searchable {
+    operationLocations: [OperationLocation!]!
+    stations: [Station!]!
+}
+
+type Station {
+    DBInformationOpeningTimes: OpeningTimes
+    aufgabentraeger: StationContact!
+    category: Int!
+    facilities: [Facility!]!
+    federalState: String!
+    hasBicycleParking: Boolean!
+    hasCarRental: Boolean!
+    hasDBLounge: Boolean!
+    hasLocalPublicTransport: Boolean!
+    hasLockerSystem: Boolean!
+    hasLostAndFound: Boolean!
+    hasMobilityService: String!
+    hasParking: Boolean!
+    hasPublicFacilities: Boolean!
+    hasRailwayMission: Boolean!
+    hasSteamPermission: Boolean!
+    hasSteplessAccess: String!
+    hasTaxiRank: Boolean!
+    hasTravelCenter: Boolean!
+    hasTravelNecessities: Boolean!
+    hasWiFi: Boolean!
+    localServiceStaffAvailability: OpeningTimes
+    location: Location
+    mailingAddress: MailingAddress!
+    name: String!
+    parkingSpaces: [ParkingSpace!]!
+    picture: Picture
+    priceCategory: Int!
+    primaryEvaId: Int
+    primaryRil100: String
+    regionalArea: RegionalArea!
+    stationManagement: StationContact!
+    stationNumber: Int
+    szentrale: StationContact!
+    timeTableOffice: StationContact
+    timetable: Timetable!
+    tracks: [Track!]!
+}
+
+type StationContact {
+    email: String
+    name: String!
+    number: String
+    phoneNumber: String
+    shortName: String
+}
+
+type Timetable {
+    nextArrivals: [TrainInStation!]!
+    nextDepatures: [TrainInStation!]!
+}
+
+type Track {
+    "Height of the platform in cm"
+    height: Int!
+    "Length of the platform in cm"
+    length: Int
+    name: String!
+    number: String!
+    platform: String!
+}
+
+type TrainInStation {
+    platform: String!
+    stops: [String!]!
+    time: String!
+    trainNumber: String!
+    type: String!
+}
+
+type TravelCenter {
+    address: MailingAddress
+    id: Int
+    location: Location
+    name: String
+    type: String
+}
+
+enum FacilityState {
+    ACTIVE
+    INACTIVE
+    UNKNOWN
+}
+
+enum FacilityType {
+    ELEVATOR
+    ESCALATOR
+}

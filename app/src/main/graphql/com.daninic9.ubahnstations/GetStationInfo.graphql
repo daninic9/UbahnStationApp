@@ -1,0 +1,12 @@
+query GetStationInfo($id:Int!) {
+    stationWithEvaId(evaId: $id) {
+        name
+        location {
+            latitude
+            longitude
+        }
+        picture {
+            url
+        }
+    }
+}

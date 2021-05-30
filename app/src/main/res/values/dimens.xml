@@ -1,0 +1,21 @@
+<resources>
+
+
+<!--    Lista vehicles tarjetas   -->
+    <dimen name="tarjeta_height">@dimen/_90sdp</dimen>
+    <dimen name="tarjeta_width">@dimen/_300sdp</dimen>
+    <dimen name="image_height">@dimen/_70sdp</dimen>
+    <dimen name="image_width">@dimen/_110sdp</dimen>
+    <dimen name="textview_fromimage_space">@dimen/_6sdp</dimen>
+    <dimen name="tarjeta_padding">@dimen/_10sdp</dimen>
+    <dimen name="view_padding">@dimen/_10sdp</dimen>
+    <dimen name="items_space">@dimen/_5sdp</dimen>
+
+    <!--    STATION INFO    -->
+    <dimen name="boxpadding_info">@dimen/_10sdp</dimen>
+    <dimen name="spacebetweenviews_info">@dimen/_8sdp</dimen>
+    <dimen name="elevation">@dimen/_4sdp</dimen>
+
+
+
+</resources>
