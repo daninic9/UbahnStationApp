@@ -13,27 +13,26 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
-public class GraphQlManager implements Runnable {
+public class GraphQlManager {
 
     private final Context context;
-    private boolean isAlive = true;
-    private ApolloClient apolloClient;
-    private int listSize;
+    private final ApolloClient apolloClient;
+    private int listAddSize;
+    private int stationsShown = 0;
+
+    private final List<Integer> idList = new ArrayList<>();
 
     public GraphQlManager(Context context) {
         this.context = context;
-    }
 
-    @Override
-    public void run() {
         apolloClient = ApolloClient.builder()
                 .serverUrl(Objects.requireNonNull(getGraphqlUrl()))
                 .build();
-
-        queryGetAll();
     }
 
     private String getGraphqlUrl() {
@@ -41,7 +40,7 @@ public class GraphQlManager implements Runnable {
             InputStream rawResource = context.getResources().openRawResource(R.raw.config);
             Properties properties = new Properties();
             properties.load(rawResource);
-            listSize = Integer.parseInt(properties.getProperty("listsize"));
+            listAddSize = Integer.parseInt(properties.getProperty("listsize"));
             return properties.getProperty("graphqlserver_url");
         } catch (Resources.NotFoundException e) {
             Logger.e("Unable to find the config file: " + e.getMessage());
@@ -51,29 +50,48 @@ public class GraphQlManager implements Runnable {
         return null;
     }
 
-    private void queryGetAll() {
+    public void initList(int max) {
+        List<Integer> toDelete = new ArrayList<>();
+        if (!idList.isEmpty()) {
+            for (Integer id : idList) {
+                getStationContent(id);
+                toDelete.add(id);
+                stationsShown ++;
+                if (stationsShown >= max + listAddSize) {
+                    break;
+                }
+            }
+            idList.removeAll(toDelete);
+        }
+    }
+
+    public void addMore() {
+        initList(stationsShown);
+    }
+
+    public void cleanList() {
+        idList.clear();
+        stationsShown = 0;
+    }
+
+    public void queryGetAll() {
         apolloClient.query(new GetAllStationsQuery())
                 .enqueue(new ApolloCall.Callback<GetAllStationsQuery.Data>() {
                     @Override
                     public void onResponse(@NotNull Response<GetAllStationsQuery.Data> response) {
                         if (response.getData() != null) {
-                            int count = 0;
                             for (GetAllStationsQuery.Station station : response.getData().search.stations) {
                                 if (station.primaryEvaId != null) {
-                                    getStationContent(station.primaryEvaId);
-                                    count++;
-                                }
-                                if (count >= listSize) {
-                                    break;
+                                    idList.add(station.primaryEvaId);
                                 }
                             }
+                            initList(0);
                         }
                     }
-
                     @Override
                     public void onFailure(@NotNull ApolloException e) {
                         Logger.e("Error " + e.getLocalizedMessage());
-                        queryGetAll();
+                        ((MainActivity) context).sendWarningError();
                     }
                 });
     }
@@ -85,7 +103,6 @@ public class GraphQlManager implements Runnable {
                     public void onResponse(@NotNull Response<GetStationInfoQuery.Data> response) {
                         if (response.getData() != null && response.getData().stationWithEvaId != null) {
                             MainActivity.stationList.add(response.getData().stationWithEvaId);
-                            Logger.d(Objects.requireNonNull(response.getData().stationWithEvaId).name);
                             ((MainActivity) context).infoUpdate();
                         }
                     }
@@ -96,7 +113,6 @@ public class GraphQlManager implements Runnable {
                     }
                 });
     }
-
 
 }
 
