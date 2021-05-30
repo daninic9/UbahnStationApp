@@ -1,102 +1,122 @@
 package com.daninic9.ubahnstations.stations;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.daninic9.ubahnstations.GetStationInfoQuery;
 import com.daninic9.ubahnstations.MainActivity;
 import com.daninic9.ubahnstations.R;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 
 
-public class StationCustomAdapter extends ArrayAdapter<GetStationInfoQuery.StationWithEvaId> {
-    private List<GetStationInfoQuery.StationWithEvaId> dataSet;
-    Context mContext;
+public class StationCustomAdapter extends RecyclerView.Adapter<StationCustomAdapter.ViewHolder> {
+    private final List<GetStationInfoQuery.StationWithEvaId> dataSet;
+    private final LayoutInflater inflater;
+    private final Context context;
 
-    // View lookup cache
-    private static class ViewHolder {
-        TextView stationnameTextview;
-        ImageView stationImage;
-    }
+    private ItemClickListener mClickListener;
 
     public StationCustomAdapter(List<GetStationInfoQuery.StationWithEvaId> data, Context context) {
-        super(context, R.layout.item_station, data);
+        this.inflater = LayoutInflater.from(context);
         this.dataSet = data;
-        this.mContext = context;
+        this.context = context;
     }
 
-    @SuppressLint("UseCompatLoadingForDrawables")
+    @NonNull
+    @NotNull
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        // Get the data item for this position
-        GetStationInfoQuery.StationWithEvaId station = getItem(position);
-        // Check if an existing view is being reused, otherwise inflate the view
-        StationCustomAdapter.ViewHolder viewHolder; // view lookup cache stored in tag
+    public ViewHolder onCreateViewHolder(@NonNull @NotNull ViewGroup parent, int viewType) {
+        View view = inflater.inflate(R.layout.item_station, parent, false);
+        return new ViewHolder(view);
+    }
 
-        if (convertView == null) {
-            viewHolder = new StationCustomAdapter.ViewHolder();
-            LayoutInflater inflater = LayoutInflater.from(getContext());
-            convertView = inflater.inflate(R.layout.item_station, parent, false);
-
-            viewHolder.stationnameTextview = convertView.findViewById(R.id.stationname_textview);
-            viewHolder.stationImage = convertView.findViewById(R.id.station_image);
-
-            convertView.setTag(viewHolder);
-        } else {
-            viewHolder = (StationCustomAdapter.ViewHolder) convertView.getTag();
-        }
-
-        viewHolder.stationnameTextview.setText(station.name());
+    @Override
+    public void onBindViewHolder(@NonNull @NotNull ViewHolder holder, int position) {
+        GetStationInfoQuery.StationWithEvaId station = dataSet.get(position);
+        holder.stationnameTextview.setText(station.name());
 
         if (station.picture() != null && !station.picture().url().isEmpty()) {
             new Thread(() -> {
                 try {
                     URL newUrl = new URL(station.picture().url());
                     Bitmap bitmap = BitmapFactory.decodeStream(newUrl.openConnection().getInputStream());
-                    ((MainActivity) mContext).runOnUiThread(() -> {
-                        viewHolder.stationImage.setImageBitmap(bitmap);
-                    });
-
+                    ((MainActivity) context).runOnUiThread(() -> holder.stationImage.setImageBitmap(bitmap));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }).start();
 
         } else {
-            viewHolder.stationImage.setImageResource(R.drawable.noimage);
+            holder.stationImage.setImageResource(R.drawable.noimage);
         }
 
-
-
-
-//        viewHolder.searchcoordinates_dropoff_button.setOnClickListener(v -> {
-//            ActivityVehicleList.selectedVehicle = station;
-//            ((ActivityVehicleList) mContext).createFragment(MapsFragment.class, Names.FRAG_MAPS_DOP);
-//        });
-
-        convertView.setOnClickListener(view -> {
-            //TODO: program what happens when clicking on a station item
-        });
-
-        return convertView;
     }
 
-    public static Bitmap bytesToBitmap(byte[] bytes) {
-        // This function converts a byte array into a Bitmap
-        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        return bitmap;
+    @Override
+    public int getItemCount() {
+        return dataSet.size();
     }
 
+    @Override
+    public long getItemId(int position) {
+        return position;
+    }
 
+    @Override
+    public int getItemViewType(int position) {
+        return position;
+    }
+
+    // View lookup cache
+    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        TextView stationnameTextview;
+        ImageView stationImage;
+        ConstraintLayout itemContainer;
+
+        public ViewHolder(View view) {
+            super(view);
+            stationnameTextview = view.findViewById(R.id.stationname_textview);
+            stationImage = view.findViewById(R.id.station_image);
+            itemContainer = view.findViewById(R.id.itemContainer);
+            itemContainer.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View view) {
+            if (mClickListener != null) mClickListener.onItemClick(view, getAdapterPosition());
+        }
+    }
+
+    // convenience method for getting data at click position
+    public GetStationInfoQuery.StationWithEvaId getItem(int id) {
+        return dataSet.get(id);
+    }
+
+    // allows clicks events to be caught
+    public void setClickListener(ItemClickListener itemClickListener) {
+        this.mClickListener = itemClickListener;
+    }
+
+    // parent activity will implement this method to respond to click events
+    public interface ItemClickListener {
+        void onItemClick(View view, int position);
+    }
+    
 }
+
+

@@ -58,7 +58,6 @@ public class GraphQlManager implements Runnable {
                         if (response.getData() != null) {
                             int count = 0;
                             for (GetAllStationsQuery.Station station : response.getData().search.stations) {
-                                Logger.d(station.primaryEvaId);
                                 if (station.primaryEvaId != null) {
                                     getStationContent(station.primaryEvaId);
                                     count++;
@@ -83,7 +82,7 @@ public class GraphQlManager implements Runnable {
                 .enqueue(new ApolloCall.Callback<GetStationInfoQuery.Data>() {
                     @Override
                     public void onResponse(@NotNull Response<GetStationInfoQuery.Data> response) {
-                        if (response.getData() != null) {
+                        if (response.getData() != null && response.getData().stationWithEvaId != null) {
                             MainActivity.stationList.add(response.getData().stationWithEvaId);
                             Logger.d(Objects.requireNonNull(response.getData().stationWithEvaId).name);
                             ((MainActivity) context).infoUpdate();
@@ -92,7 +91,7 @@ public class GraphQlManager implements Runnable {
 
                     @Override
                     public void onFailure(@NotNull ApolloException e) {
-                        Logger.e("Error", e);
+                        Logger.e("Error " + e.getLocalizedMessage());
                     }
                 });
     }
