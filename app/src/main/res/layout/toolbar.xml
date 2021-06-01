@@ -13,17 +13,8 @@
         android:layout_height="match_parent"
         android:gravity="center">
 
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="@dimen/minilogo"
-            android:layout_height="@dimen/minilogo"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/minilogo" />
-
         <SearchView
-            android:id="@+id/searchView"
+            android:id="@+id/searchStation"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:queryHint="@string/filter_hint"

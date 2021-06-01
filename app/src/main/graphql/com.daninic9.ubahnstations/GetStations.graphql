@@ -1,0 +1,7 @@
+query GetStations($search:String!) {
+    search(searchTerm: $search) {
+        stations {
+            primaryEvaId
+        }
+    }
+}

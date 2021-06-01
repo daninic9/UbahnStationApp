@@ -13,13 +13,14 @@ import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.orhanobut.logger.Logger;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.Objects;
-
 
 public class StationCustomAdapter extends RecyclerView.Adapter<StationCustomAdapter.ViewHolder> {
     private final List<GetStationInfoQuery.StationWithEvaId> dataSet;
@@ -28,6 +29,14 @@ public class StationCustomAdapter extends RecyclerView.Adapter<StationCustomAdap
 
     private ItemClickListener mClickListener;
 
+    /**
+     * Constructor of the station item adapter
+     *
+     * @param data {@link List} of
+     * {@link com.daninic9.ubahnstations.GetStationInfoQuery.StationWithEvaId},
+     * which contains the Station info
+     * @param context {@link Context} of the {@link MainActivity}
+     */
     public StationCustomAdapter(List<GetStationInfoQuery.StationWithEvaId> data, Context context) {
         this.inflater = LayoutInflater.from(context);
         this.dataSet = data;
@@ -46,25 +55,33 @@ public class StationCustomAdapter extends RecyclerView.Adapter<StationCustomAdap
     public void onBindViewHolder(@NonNull @NotNull ViewHolder holder, int position) {
         GetStationInfoQuery.StationWithEvaId station = dataSet.get(position);
         holder.stationnameTextview.setText(station.name());
-        String location = "(" + Objects.requireNonNull(station.location()).latitude() + "," +
+        String location = "(" + Objects.requireNonNull(station.location()).latitude() + ", " +
                 Objects.requireNonNull(station.location()).longitude() + ")";
         holder.locTextview.setText(location);
 
-        if (station.picture() != null && !Objects.requireNonNull(station.picture()).url().isEmpty()) {
-            new Thread(() -> {
-                try {
-                    URL newUrl = new URL(Objects.requireNonNull(station.picture()).url());
-                    Bitmap bitmap = BitmapFactory.decodeStream(newUrl.openConnection().getInputStream());
-                    ((MainActivity) context).runOnUiThread(() -> holder.stationImage.setImageBitmap(bitmap));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-
+        if (station.picture() != null &&
+                !Objects.requireNonNull(station.picture()).url().isEmpty()) {
+            downloadImageAndSetImage(holder, station);
         } else {
             holder.stationImage.setImageResource(R.drawable.noimage);
         }
+    }
 
+    private void downloadImageAndSetImage(@NotNull ViewHolder holder,
+                                          GetStationInfoQuery.StationWithEvaId station) {
+        new Thread(() -> {
+            try {
+                URL newUrl = new URL(Objects.requireNonNull(station.picture()).url());
+                Bitmap bitmap =
+                        BitmapFactory.decodeStream(newUrl.openConnection().getInputStream());
+                ((MainActivity) context).runOnUiThread(() ->
+                        holder.stationImage.setImageBitmap(bitmap));
+            } catch (IOException e) {
+                ((MainActivity) context).runOnUiThread(() ->
+                        holder.stationImage.setImageResource(R.drawable.noimage));
+                Logger.e(Objects.requireNonNull(e.getLocalizedMessage()));
+            }
+        }).start();
     }
 
     @Override
@@ -82,8 +99,10 @@ public class StationCustomAdapter extends RecyclerView.Adapter<StationCustomAdap
         return position;
     }
 
-    // View lookup cache
-    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    /**
+     * Link between layout and adapter
+     */
+    protected class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         TextView stationnameTextview;
         TextView locTextview;
         ImageView stationImage;
@@ -104,18 +123,15 @@ public class StationCustomAdapter extends RecyclerView.Adapter<StationCustomAdap
         }
     }
 
-    // convenience method for getting data at click position
     public GetStationInfoQuery.StationWithEvaId getItem(int id) {
         return dataSet.get(id);
     }
 
-    // allows clicks events to be caught
     public void setClickListener(ItemClickListener itemClickListener) {
         this.mClickListener = itemClickListener;
     }
 
-    // parent activity will implement this method to respond to click events
-    public interface ItemClickListener {
+    protected interface ItemClickListener {
         void onItemClick(View view, int position);
     }
     

@@ -27,6 +27,11 @@ public class GraphQlManager {
 
     private final List<Integer> idList = new ArrayList<>();
 
+    /**
+     * Constructor of the GraphQl Manager Class
+     *
+     * @param context {@link Context} of the {@link MainActivity}
+     */
     public GraphQlManager(Context context) {
         this.context = context;
 
@@ -50,11 +55,21 @@ public class GraphQlManager {
         return null;
     }
 
+    /**
+     * Checks the Station list for items to obtain station
+     * indormation and add to listview
+     * or in case of refresh, to fill de list
+     *
+     * @param max Total number of items shown on list
+     */
     public void initList(int max) {
         List<Integer> toDelete = new ArrayList<>();
+        Logger.d(idList.size());
         if (!idList.isEmpty()) {
             for (Integer id : idList) {
+                Logger.d(2);
                 getStationContent(id, max != 0);
+                Logger.d(4);
                 toDelete.add(id);
                 stationsShown ++;
                 if (stationsShown >= max + listAddSize) {
@@ -65,28 +80,43 @@ public class GraphQlManager {
         }
     }
 
+    /**
+     * Add new items to the already set list
+     */
     public void addMore() {
         initList(stationsShown);
     }
 
+    /**
+     * Clean the station list
+     */
     public void cleanList() {
+        MainActivity.getStationList().clear();
         idList.clear();
         stationsShown = 0;
     }
 
-    public void queryGetAll() {
-        apolloClient.query(new GetAllStationsQuery())
-                .enqueue(new ApolloCall.Callback<GetAllStationsQuery.Data>() {
+    /**
+     * Request a query to Graphql to obtain all stations
+     */
+    public void queryGetAll(String search) {
+        cleanList();
+        apolloClient.query(new GetStationsQuery(search))
+                .enqueue(new ApolloCall.Callback<GetStationsQuery.Data>() {
                     @Override
-                    public void onResponse(@NotNull Response<GetAllStationsQuery.Data> response) {
+                    public void onResponse(@NotNull Response<GetStationsQuery.Data> response) {
                         Logger.i("Query Success");
-                        if (response.getData() != null) {
-                            for (GetAllStationsQuery.Station station : response.getData().search.stations) {
+                        if (response.getData() != null &&
+                                !response.getData().search.stations.isEmpty()) {
+                            for (GetStationsQuery.Station station :
+                                    response.getData().search.stations) {
                                 if (station.primaryEvaId != null) {
                                     idList.add(station.primaryEvaId);
                                 }
                             }
                             initList(0);
+                        } else {
+                            ((MainActivity) context).sendToast(context.getString(R.string.error_empty));
                         }
                     }
                     @Override
@@ -99,14 +129,19 @@ public class GraphQlManager {
     }
 
     private void getStationContent(int id, boolean isAdding) {
+        Logger.d(3);
         apolloClient.query(new GetStationInfoQuery(id))
                 .enqueue(new ApolloCall.Callback<GetStationInfoQuery.Data>() {
                     @Override
                     public void onResponse(@NotNull Response<GetStationInfoQuery.Data> response) {
-                        Logger.i("Query Success");
-                        if (response.getData() != null && response.getData().stationWithEvaId != null) {
+                        if (response.getData() != null &&
+                                response.getData().stationWithEvaId != null) {
                             MainActivity.getStationList().add(response.getData().stationWithEvaId);
-                            ((MainActivity) context).infoUpdate(isAdding);
+                            if (isAdding) {
+                                ((MainActivity) context).infoAdd();
+                            } else {
+                                ((MainActivity) context).infoUpdate();
+                            }
                         }
                     }
 

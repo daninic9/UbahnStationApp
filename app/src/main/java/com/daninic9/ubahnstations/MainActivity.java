@@ -6,7 +6,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.database.DataSetObserver;
 import android.os.Bundle;
+import android.view.ViewTreeObserver;
+import android.widget.SearchView;
+import android.widget.Toast;
 
 import com.orhanobut.logger.AndroidLogAdapter;
 import com.orhanobut.logger.FormatStrategy;
@@ -18,24 +22,42 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-//        The app presents the user with a list of UBahn stations (underground stations in Germany).
-//        The list shows the name, lat, lon and a small image of each station.
-//        The user can filter the list using a string filter at the top of the list.
-//        Spinners are shown when the user executes a filter search (this an asynchronous request to the API).
-//        You can use the publicly available Graphql API at:
-//        https://bahnql.herokuapp.com/graphql
-
-
+/**
+ * The app presents the user with a list of UBahn stations (underground stations in Germany).
+ * The list shows the name, lat, lon and a small image of each station.
+ * The user can filter the list using a string filter at the top of the list.
+ * Spinners are shown when the user executes a filter search (this an asynchronous request to the
+ * API).
+ * You can use the publicly available Graphql API at:
+ * https://bahnql.herokuapp.com/graphql
+ */
 public class MainActivity extends AppCompatActivity {
 
+    /* Adapter to manage station items views */
     private StationCustomAdapter stationCustomAdapter;
-    private RecyclerView stationsRecycler;
+
+    /* Parent view of recycler that allows swipe down event */
     private SwipeRefreshLayout swipeRefreshLayout;
 
+    /* View to visualize station List */
+    private RecyclerView stationsRecycler;
+
+    /* Class to manage GraphQl queries */
     private GraphQlManager graphQlManager;
 
-    private static final boolean IS_FILTERED = false;
+    private SearchView searchStation;
 
+    /* Flag to control if list is being filtered */
+    private boolean isFiltered = false;
+
+    /**
+     * Flag to keep track if a filter was done so when user closes search, it refreshes
+     */
+    private boolean needsRefreshList = false;
+
+    private boolean isRefreshing = false;
+
+    /* List that contains stations being currently shown */
     private static final List<GetStationInfoQuery.StationWithEvaId> stationList = new ArrayList<>();
 
     @Override
@@ -46,34 +68,38 @@ public class MainActivity extends AppCompatActivity {
         initLogger();
         declareViews();
         graphQlManager = new GraphQlManager(this);
-        initInfoFetch();
+        initInfoFetch("");
     }
 
     private void initLogger() {
         FormatStrategy formatStrategy = PrettyFormatStrategy.newBuilder()
-                .showThreadInfo(false)  // (Optional) Whether to show thread info or not. Default true
-                .tag("UbahnStationsLogger")   // (Optional) Global tag for every log. Default PRETTY_LOGGER
+                .showThreadInfo(false)
+                .tag("UbahnStationsLogger")
                 .build();
         Logger.addLogAdapter(new AndroidLogAdapter(formatStrategy));
         Logger.i("------------------ STARTING APP ------------------");
     }
-    private void initInfoFetch() {
+
+    private void initInfoFetch(String search) {
         blockScreen(true);
-        graphQlManager.queryGetAll();
+        graphQlManager.queryGetAll(search);
     }
 
     private void declareViews() {
         stationsRecycler = findViewById(R.id.stations_recycler);
         stationsRecycler.setLayoutManager(new LinearLayoutManager(this));
         swipeRefreshLayout = findViewById(R.id.swipeContainer_stations);
+        searchStation = findViewById(R.id.searchStation);
         setViewEvents();
     }
+
     private void setViewEvents() {
         stationsRecycler.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NotNull RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
-                if (!recyclerView.canScrollVertically(1) && !swipeRefreshLayout.isRefreshing()) {
+                if (!recyclerView.canScrollVertically(1) &&
+                        !isRefreshing) {
                     Logger.i("Load Next 10");
                     blockScreen(true);
                     graphQlManager.addMore();
@@ -81,13 +107,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         swipeRefreshLayout.setOnRefreshListener(() -> {
-            if (!IS_FILTERED) {
-                if (!stationList.isEmpty()) {
-                    stationList.clear();
-                    graphQlManager.cleanList();
-                }
+            if (!isFiltered) {
                 Logger.i("Refresh");
-                initInfoFetch();
+                initInfoFetch("");
+            } else {
+                swipeRefreshLayout.setRefreshing(false);
             }
         });
         swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright,
@@ -95,14 +119,46 @@ public class MainActivity extends AppCompatActivity {
                 android.R.color.holo_orange_light,
                 android.R.color.holo_red_light);
 
-        findViewById(R.id.button_goup).setOnClickListener(v -> stationsRecycler.smoothScrollToPosition(0));
+        findViewById(R.id.button_goup).setOnClickListener(v ->
+                stationsRecycler.smoothScrollToPosition(0));
+
+        searchStation.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                isFiltered = !query.isEmpty();
+                needsRefreshList = true;
+                Logger.d("Searching: " + query);
+                initInfoFetch(query);
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+        searchStation.setOnCloseListener(() -> {
+            isFiltered = false;
+            if(needsRefreshList) {
+                needsRefreshList = false;
+                initInfoFetch("");
+            }
+            return false;
+        });
     }
 
     private void blockScreen(boolean lock) {
+        isRefreshing = lock;
         swipeRefreshLayout.setRefreshing(lock);
         stationsRecycler.suppressLayout(lock);
     }
 
+    /**
+     * Sends a pop up on screen to notify user.
+     *
+     * @param title pop up title text.
+     * @param message pop up content message text.
+     */
     public void sendWarningError(String title, String message) {
         blockScreen(false);
 
@@ -118,25 +174,45 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public void infoUpdate(boolean isAdding) {
+    /**
+     * Sends a toast to notify the user
+     * @param message message so show on the toast
+     */
+    public void sendToast(String message) {
+        runOnUiThread(() -> {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            blockScreen(false);
+        });
+
+    }
+
+    /**
+     * Fetches new station info and sets the list with updated items
+     */
+    public void infoUpdate() {
         if(!stationList.isEmpty()) {
-            if (isAdding) {
-                runOnUiThread(() -> {
-                    stationCustomAdapter.notifyDataSetChanged();
-                    blockScreen(false);
+            runOnUiThread(() -> {
+                stationCustomAdapter = new StationCustomAdapter(stationList, this);
+                stationCustomAdapter.setClickListener((view, position) -> {
+                    if (!swipeRefreshLayout.isRefreshing()) {
+                        Logger.i("Clicked " + stationCustomAdapter.getItem(position).name);
+                    }
                 });
-            } else {
-                runOnUiThread(() -> {
-                    stationCustomAdapter = new StationCustomAdapter(stationList, this);
-                    stationCustomAdapter.setClickListener((view, position) -> {
-                        if (!swipeRefreshLayout.isRefreshing()) {
-                            Logger.i("Clicked " + stationCustomAdapter.getItem(position).name);
-                        }
-                    });
-                    stationsRecycler.setAdapter(stationCustomAdapter);
-                    blockScreen(false);
-                });
-            }
+                stationsRecycler.setAdapter(stationCustomAdapter);
+                blockScreen(false);
+            });
+        }
+    }
+
+    /**
+     * Adds more items to the already printed list
+     */
+    public void infoAdd() {
+        if(!stationList.isEmpty()) {
+            runOnUiThread(() -> {
+                stationCustomAdapter.notifyDataSetChanged();
+                blockScreen(false);
+            });
         }
     }
 
