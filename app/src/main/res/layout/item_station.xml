@@ -27,11 +27,19 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/spacebetweenviews_info"
-        android:text="TextView"
         android:textAllCaps="true"
         android:textColor="@android:color/black"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@id/station_image"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@id/station_image" />
+
+    <TextView
+        android:id="@+id/loc_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/orange"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/station_image"
+        app:layout_constraintStart_toStartOf="@id/stationname_textview"
+        app:layout_constraintTop_toBottomOf="@id/stationname_textview" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

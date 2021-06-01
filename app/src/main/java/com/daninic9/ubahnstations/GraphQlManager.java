@@ -54,7 +54,7 @@ public class GraphQlManager {
         List<Integer> toDelete = new ArrayList<>();
         if (!idList.isEmpty()) {
             for (Integer id : idList) {
-                getStationContent(id);
+                getStationContent(id, max != 0);
                 toDelete.add(id);
                 stationsShown ++;
                 if (stationsShown >= max + listAddSize) {
@@ -79,6 +79,7 @@ public class GraphQlManager {
                 .enqueue(new ApolloCall.Callback<GetAllStationsQuery.Data>() {
                     @Override
                     public void onResponse(@NotNull Response<GetAllStationsQuery.Data> response) {
+                        Logger.i("Query Success");
                         if (response.getData() != null) {
                             for (GetAllStationsQuery.Station station : response.getData().search.stations) {
                                 if (station.primaryEvaId != null) {
@@ -91,25 +92,29 @@ public class GraphQlManager {
                     @Override
                     public void onFailure(@NotNull ApolloException e) {
                         Logger.e("Error " + e.getLocalizedMessage());
-                        ((MainActivity) context).sendWarningError();
+                        ((MainActivity) context).sendWarningError(context.getString(R.string.error),
+                                context.getString(R.string.error_query));
                     }
                 });
     }
 
-    private void getStationContent(int id) {
+    private void getStationContent(int id, boolean isAdding) {
         apolloClient.query(new GetStationInfoQuery(id))
                 .enqueue(new ApolloCall.Callback<GetStationInfoQuery.Data>() {
                     @Override
                     public void onResponse(@NotNull Response<GetStationInfoQuery.Data> response) {
+                        Logger.i("Query Success");
                         if (response.getData() != null && response.getData().stationWithEvaId != null) {
-                            MainActivity.stationList.add(response.getData().stationWithEvaId);
-                            ((MainActivity) context).infoUpdate();
+                            MainActivity.getStationList().add(response.getData().stationWithEvaId);
+                            ((MainActivity) context).infoUpdate(isAdding);
                         }
                     }
 
                     @Override
                     public void onFailure(@NotNull ApolloException e) {
                         Logger.e("Error " + e.getLocalizedMessage());
+                        ((MainActivity) context).sendWarningError(context.getString(R.string.error),
+                                context.getString(R.string.error_query));
                     }
                 });
     }

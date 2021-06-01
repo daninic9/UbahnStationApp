@@ -1,4 +1,4 @@
-package com.daninic9.ubahnstations.stations;
+package com.daninic9.ubahnstations;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -13,15 +13,12 @@ import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.daninic9.ubahnstations.GetStationInfoQuery;
-import com.daninic9.ubahnstations.MainActivity;
-import com.daninic9.ubahnstations.R;
-
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.Objects;
 
 
 public class StationCustomAdapter extends RecyclerView.Adapter<StationCustomAdapter.ViewHolder> {
@@ -49,11 +46,14 @@ public class StationCustomAdapter extends RecyclerView.Adapter<StationCustomAdap
     public void onBindViewHolder(@NonNull @NotNull ViewHolder holder, int position) {
         GetStationInfoQuery.StationWithEvaId station = dataSet.get(position);
         holder.stationnameTextview.setText(station.name());
+        String location = "(" + Objects.requireNonNull(station.location()).latitude() + "," +
+                Objects.requireNonNull(station.location()).longitude() + ")";
+        holder.locTextview.setText(location);
 
-        if (station.picture() != null && !station.picture().url().isEmpty()) {
+        if (station.picture() != null && !Objects.requireNonNull(station.picture()).url().isEmpty()) {
             new Thread(() -> {
                 try {
-                    URL newUrl = new URL(station.picture().url());
+                    URL newUrl = new URL(Objects.requireNonNull(station.picture()).url());
                     Bitmap bitmap = BitmapFactory.decodeStream(newUrl.openConnection().getInputStream());
                     ((MainActivity) context).runOnUiThread(() -> holder.stationImage.setImageBitmap(bitmap));
                 } catch (IOException e) {
@@ -85,12 +85,14 @@ public class StationCustomAdapter extends RecyclerView.Adapter<StationCustomAdap
     // View lookup cache
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         TextView stationnameTextview;
+        TextView locTextview;
         ImageView stationImage;
         ConstraintLayout itemContainer;
 
         public ViewHolder(View view) {
             super(view);
             stationnameTextview = view.findViewById(R.id.stationname_textview);
+            locTextview = view.findViewById(R.id.loc_textview);
             stationImage = view.findViewById(R.id.station_image);
             itemContainer = view.findViewById(R.id.itemContainer);
             itemContainer.setOnClickListener(this);

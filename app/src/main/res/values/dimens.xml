@@ -17,5 +17,9 @@
     <dimen name="elevation">@dimen/_4sdp</dimen>
 
 
+    <!--    ACTION BARs -->
+    <dimen name="searchview_maxwidth">@dimen/_100sdp</dimen>
+    <dimen name="content_margintop">@dimen/_10sdp</dimen>
+    <dimen name="minilogo">@dimen/_30sdp</dimen>
 
 </resources>
