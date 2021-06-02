@@ -1,4 +1,3 @@
-[[_TOC_]]
 
 #Ubahn Station Android App
 
@@ -16,6 +15,17 @@ Scrolling up at the start of the list will cause the list to refresh (clear the 
 ### Requirements
 Android Min SDK: 24
 Android Target SDK: 30
+
+### Sample images
+
+<div align="center">
+	<img src="img/main.jpg" width=300" title="Main Screen">
+	<img src="img/filter.jpg" width=300" title="Filter applied">
+	<img src="img/loading.jpg" width=300" title="Main Screen">
+	<img src="img/error.jpg" width=300" title="Filter applied">
+</div>
+
+
 
 ### Components
 #### Libraries used:

@@ -27,6 +27,7 @@ public class GraphQlManager {
     private int stationsShown = 0;
 
     private CountDownTimer countDownTimer;
+    private int timeoutTime;
 
     private final List<Integer> idList = new ArrayList<>();
 
@@ -49,6 +50,7 @@ public class GraphQlManager {
             Properties properties = new Properties();
             properties.load(rawResource);
             listAddSize = Integer.parseInt(properties.getProperty("listsize"));
+            timeoutTime = Integer.parseInt(properties.getProperty("timeout"));
             return properties.getProperty("graphqlserver_url");
         } catch (Resources.NotFoundException e) {
             Logger.e("Unable to find the config file: " + e.getMessage());
@@ -73,7 +75,7 @@ public class GraphQlManager {
                 ii++;
                 if (ii <= max) continue;
                 stationsShown++;
-                Logger.i("Requesting " + ii + "/" + idList.size() + " - " + id);
+                Logger.d("Requesting " + ii + "/" + idList.size() + " - " + id);
                 boolean last = stationsShown >= max + listAddSize ||
                         stationsShown == idList.size() ||
                         ii == idList.size();
@@ -143,7 +145,9 @@ public class GraphQlManager {
                         if (response.getData() != null &&
                                 response.getData().stationWithEvaId != null) {
                             if (last) {
-                                Logger.i("Retrieved last station info: " + response.getData().stationWithEvaId().name);
+                                Logger.i("Retrieved last station info: " +
+                                        Objects.requireNonNull(response.getData()
+                                                .stationWithEvaId()).name);
                                 countDownTimer.cancel();
                             }
                             MainActivity.getStationList().add(response.getData().stationWithEvaId);
@@ -167,10 +171,10 @@ public class GraphQlManager {
     private void setTimeout(boolean last) {
         ((MainActivity) context).runOnUiThread(() -> {
             if (last) {
-                countDownTimer = new CountDownTimer(8000, 1000) {
+                countDownTimer = new CountDownTimer(timeoutTime, 1000) {
                     @Override
                     public void onTick(long millisUntilFinished) {
-                        Logger.i("Timeout running...");
+                        Logger.d("Timeout running...");
                     }
 
                     @Override

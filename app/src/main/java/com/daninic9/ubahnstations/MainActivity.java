@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.widget.SearchView;
 import android.widget.Toast;
@@ -69,6 +70,12 @@ public class MainActivity extends AppCompatActivity {
         initInfoFetch("");
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Logger.clearLogAdapters();
+    }
+
     private void initLogger() {
         FormatStrategy formatStrategy = PrettyFormatStrategy.newBuilder()
                 .showThreadInfo(false)
@@ -76,6 +83,8 @@ public class MainActivity extends AppCompatActivity {
                 .build();
         Logger.addLogAdapter(new AndroidLogAdapter(formatStrategy));
         Logger.i("------------------ STARTING APP ------------------");
+
+
     }
 
     private void initInfoFetch(String search) {
@@ -173,11 +182,13 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             AlertDialog dialog = builder.create();
             dialog.show();
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(getResources().getColor(R.color.orange, null));
         });
     }
 
     /**
      * Sends a toast to notify the user
+     *
      * @param message message so show on the toast
      */
     public void sendToast(String message) {
@@ -189,6 +200,9 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Fetches new station info and sets the list with updated items
+     * and unblocks screen if last one is completed
+     *
+     * @param last represents the last value on the list if true
      */
     public void infoUpdate(boolean last) {
         if(!stationList.isEmpty()) {
@@ -207,6 +221,9 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Adds more items to the already printed list
+     * and unblocks screen if last one is completed
+     *
+     * @param last represents the last value on the list if true
      */
     public void infoAdd(boolean last) {
         if(!stationList.isEmpty()) {
