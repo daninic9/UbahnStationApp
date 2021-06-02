@@ -6,9 +6,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import android.database.DataSetObserver;
 import android.os.Bundle;
-import android.view.ViewTreeObserver;
 import android.widget.SearchView;
 import android.widget.Toast;
 
@@ -98,13 +96,17 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onScrollStateChanged(@NotNull RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
-                if (!recyclerView.canScrollVertically(1) &&
-                        !isRefreshing) {
-                    Logger.i("Load Next 10");
-                    blockScreen(true);
-                    graphQlManager.addMore();
+                if (!recyclerView.canScrollVertically(1) && !isRefreshing) {
+                    if (graphQlManager.getStationsShown() < graphQlManager.getIdList().size()) {
+                        Logger.i("Loading more...");
+                        blockScreen(true);
+                        graphQlManager.addMore();
+                    } else {
+                        Logger.i("End of the list reached, can't load more.");
+                    }
                 }
             }
+
         });
         swipeRefreshLayout.setOnRefreshListener(() -> {
             if (!isFiltered) {
@@ -147,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void blockScreen(boolean lock) {
+    private synchronized void blockScreen(boolean lock) {
         isRefreshing = lock;
         swipeRefreshLayout.setRefreshing(lock);
         stationsRecycler.suppressLayout(lock);
@@ -183,13 +185,12 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
             blockScreen(false);
         });
-
     }
 
     /**
      * Fetches new station info and sets the list with updated items
      */
-    public void infoUpdate() {
+    public void infoUpdate(boolean last) {
         if(!stationList.isEmpty()) {
             runOnUiThread(() -> {
                 stationCustomAdapter = new StationCustomAdapter(stationList, this);
@@ -199,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 stationsRecycler.setAdapter(stationCustomAdapter);
-                blockScreen(false);
+                if (last) blockScreen(false);
             });
         }
     }
@@ -207,11 +208,11 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Adds more items to the already printed list
      */
-    public void infoAdd() {
+    public void infoAdd(boolean last) {
         if(!stationList.isEmpty()) {
             runOnUiThread(() -> {
                 stationCustomAdapter.notifyDataSetChanged();
-                blockScreen(false);
+                if (last) blockScreen(false);
             });
         }
     }

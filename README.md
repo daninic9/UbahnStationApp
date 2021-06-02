@@ -28,3 +28,5 @@ Android Target SDK: 30
 https://bahnql.herokuapp.com/graphql GraphQl server
 
 
+### App Icon design
+[Hanami](https://www.instagram.com/hanami_art24/?hl=es)

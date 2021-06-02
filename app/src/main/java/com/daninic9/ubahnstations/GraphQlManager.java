@@ -2,6 +2,7 @@ package com.daninic9.ubahnstations;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.os.CountDownTimer;
 
 import com.apollographql.apollo.ApolloCall;
 import com.apollographql.apollo.ApolloClient;
@@ -24,6 +25,8 @@ public class GraphQlManager {
     private final ApolloClient apolloClient;
     private int listAddSize;
     private int stationsShown = 0;
+
+    private CountDownTimer countDownTimer;
 
     private final List<Integer> idList = new ArrayList<>();
 
@@ -57,26 +60,28 @@ public class GraphQlManager {
 
     /**
      * Checks the Station list for items to obtain station
-     * indormation and add to listview
+     * information and add to listview
      * or in case of refresh, to fill de list
      *
      * @param max Total number of items shown on list
      */
     public void initList(int max) {
-        List<Integer> toDelete = new ArrayList<>();
-        Logger.d(idList.size());
-        if (!idList.isEmpty()) {
+        Logger.i("Requesting " + max + "+" + listAddSize + " from " + idList.size());
+        if (!idList.isEmpty() && max < idList.size()) {
+            int ii = 0;
             for (Integer id : idList) {
-                Logger.d(2);
-                getStationContent(id, max != 0);
-                Logger.d(4);
-                toDelete.add(id);
-                stationsShown ++;
-                if (stationsShown >= max + listAddSize) {
-                    break;
-                }
+                ii++;
+                if (ii <= max) continue;
+                stationsShown++;
+                Logger.i("Requesting " + ii + "/" + idList.size() + " - " + id);
+                boolean last = stationsShown >= max + listAddSize ||
+                        stationsShown == idList.size() ||
+                        ii == idList.size();
+                getStationContent(id, max != 0, last);
+                if (last) return;
             }
-            idList.removeAll(toDelete);
+        } else {
+            ((MainActivity) context).infoAdd(true);
         }
     }
 
@@ -128,19 +133,24 @@ public class GraphQlManager {
                 });
     }
 
-    private void getStationContent(int id, boolean isAdding) {
-        Logger.d(3);
+    private void getStationContent(int id, boolean isAdding, boolean last) {
+        Logger.d(id + " - " + isAdding + " - " + last);
+        setTimeout(last);
         apolloClient.query(new GetStationInfoQuery(id))
                 .enqueue(new ApolloCall.Callback<GetStationInfoQuery.Data>() {
                     @Override
                     public void onResponse(@NotNull Response<GetStationInfoQuery.Data> response) {
                         if (response.getData() != null &&
                                 response.getData().stationWithEvaId != null) {
+                            if (last) {
+                                Logger.i("Retrieved last station info: " + response.getData().stationWithEvaId().name);
+                                countDownTimer.cancel();
+                            }
                             MainActivity.getStationList().add(response.getData().stationWithEvaId);
                             if (isAdding) {
-                                ((MainActivity) context).infoAdd();
+                                ((MainActivity) context).infoAdd(last);
                             } else {
-                                ((MainActivity) context).infoUpdate();
+                                ((MainActivity) context).infoUpdate(last);
                             }
                         }
                     }
@@ -154,5 +164,33 @@ public class GraphQlManager {
                 });
     }
 
+    private void setTimeout(boolean last) {
+        ((MainActivity) context).runOnUiThread(() -> {
+            if (last) {
+                countDownTimer = new CountDownTimer(8000, 1000) {
+                    @Override
+                    public void onTick(long millisUntilFinished) {
+                        Logger.i("Timeout running...");
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        Logger.e("Timeout");
+                        ((MainActivity) context).sendWarningError(context.getString(R.string.warn),
+                                context.getString(R.string.timeout));
+                    }
+                };
+                countDownTimer.start();
+            }
+        });
+    }
+
+    public int getStationsShown() {
+        return stationsShown;
+    }
+
+    public List<Integer> getIdList() {
+        return idList;
+    }
 }
 

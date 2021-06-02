@@ -5,6 +5,8 @@
 
     <string name="ok">Ok</string>
     <string name="error">Error</string>
+    <string name="warn">Warning</string>
     <string name="error_query">Error when requesting the query. Please try to swipe the list down again</string>
     <string name="error_empty">No result found</string>
+    <string name="timeout">Server is taking too long to answer. Please try again,</string>
 </resources>
